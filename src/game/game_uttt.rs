@@ -1,11 +1,8 @@
-
-use std::string;
-
 use minimax::{Evaluator, Game, Winner};
 
 use crate::template::tic_tac_toe::{Grid3x3, GridSlot, PieceType};
 
-use super::{ node_uttt::{UtttState}, playable::Playable};
+use super::{ node_uttt::UtttState, playable::Playable};
 
 
 #[derive(Debug, PartialEq)]
@@ -166,9 +163,7 @@ impl Game for UtttState{
     }
 }
 
-pub struct UtttEvaluator {
-    name: String
-}
+pub struct UtttEvaluator;
 impl Evaluator for UtttEvaluator{
     type G = UtttState;
 
@@ -186,13 +181,6 @@ impl Evaluator for UtttEvaluator{
             return res;
         }else{
             return -res;
-        }
-    }
-}
-impl UtttEvaluator {
-    pub fn new(name: String) -> Self {
-        return Self {
-            name
         }
     }
 }

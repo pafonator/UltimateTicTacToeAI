@@ -11,7 +11,7 @@ use template::tic_tac_toe::GridSlot;
 extern crate minimax;
 
 fn minimax(state: &UtttState, depth: u8) -> Option<(GridSlot, GridSlot)>{
-    let evaluator = UtttEvaluator::new("UtttEvaluator".to_string());
+    let evaluator = UtttEvaluator;
     let mut strategy = minimax::Negamax::new(evaluator, depth);
 
     let best_move = strategy.choose_move(state);
