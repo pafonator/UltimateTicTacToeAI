@@ -10,20 +10,14 @@ This is an implementation of Ultimate Tic Tac Toe AI using Rust for the backend 
 - Python 3.x
 - Cargo
 
-### Installation
+### Setup
 
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/yourusername/UltimateTicTacToe.git
-    cd UltimateTicTacToe
-    ```
-
-2. Compile the Rust code using Cargo:
+1. Compile the Rust code using Cargo:
     ```sh
     cargo build --release
     ```
 
-3. Run the GUI:
+2. Run the Python GUI:
     ```sh
     python main.py
     ```
