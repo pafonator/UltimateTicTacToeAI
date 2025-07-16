@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 import subprocess
 import time
+import os
 
 class UltraGridApp:
     def __init__(self, player1_type="Human", player2_type="AI"):
@@ -139,31 +140,25 @@ class UltraGridApp:
     def simulate_ai_move(self):
         """Simulate an AI move by communicating with an external program."""
         try:
-            timeout = 3
+            timeout = 8
             print("Running AI for {} seconds".format(timeout))
             
             # Export current grid to JSON
             grid_json = json.dumps(self.grid_data)
 
-            start_time = time.time()
-            for d in range(5, 20):
-                try:
-                    remaining_time = timeout - (time.time() - start_time)
-                    executable = "target/release/UltimateTicTacToe"
-                    #print(f" - Running command:\n{executable} {d} '{grid_json}'")
-                    # Run the external program and get its output
-                    result = subprocess.run(
-                        [executable, str(d) ,grid_json],
-                        text=True,
-                        capture_output=True,
-                        check=True,
-                        timeout= remaining_time,  # Remaining time
-                    )
-                    depth = d
-                except subprocess.TimeoutExpired:
-                    print(f"[Rust Output]:\nTimeout\n")
-                    break
-            print(f"[Rust Output] for depth {depth}:\n{result.stdout}\n")
+            print(grid_json)
+            executable = os.path.join("target", "release", "UltimateTicTacToe")
+            #executable = os.path.join("target", "x86_64-pc-windows-gnu", "debug" ,"UltimateTicTacToe.exe")
+            #print(f" - Running command:\n{executable} {d} '{grid_json}'")
+            # Run the external program and get its output
+            result = subprocess.run(
+                [executable, str(timeout) ,grid_json],
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            
+            print(result.stdout)
             
             # Separate logs and result
             result_json = None
@@ -266,7 +261,7 @@ class UltraGridApp:
 
 
 def main():
-    app = UltraGridApp(player1_type="Human", player2_type="AI")  
+    app = UltraGridApp(player1_type="AI", player2_type="AI")  
     app.run()
 
 

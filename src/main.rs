@@ -1,5 +1,6 @@
 mod game;
 mod template;
+use std::time::Duration;
 use std::{env, process};
 
 use game::game_uttt::UtttEvaluator;
@@ -10,9 +11,17 @@ use template::tic_tac_toe::GridSlot;
 
 extern crate minimax;
 
-fn minimax(state: &UtttState, depth: u8) -> Option<(GridSlot, GridSlot)>{
+fn minimax(state: &UtttState, timeout: std::time::Duration) -> Option<(GridSlot, GridSlot)>{
     let evaluator = UtttEvaluator;
-    let mut strategy = minimax::Negamax::new(evaluator, depth);
+
+    let parallel_opt = minimax::ParallelOptions::new();
+    parallel_opt.with_num_threads(16);
+    //parallel_opt.with_background_pondering();
+    let iter_opt = minimax::IterativeOptions::new();
+    iter_opt.verbose();
+
+    let mut strategy = minimax::ParallelSearch::new(evaluator,iter_opt,parallel_opt);
+    strategy.set_timeout(timeout);
 
     let best_move = strategy.choose_move(state);
     //let best_move_seq = strategy.principal_variation();
@@ -32,18 +41,18 @@ fn main() {
 
     // Check if a JSON string is provided as an argument
     if args.len() != 3 {
-        eprintln!("Usage: {} <Depth> <UtttState_JSON>", args[0]);
+        eprintln!("Usage: {} <Duration> <UtttState_JSON>", args[0]);
         process::exit(1);
     }
 
-    let depth = args[1].parse::<u8>().expect("Failed to parse depth");
+    let duration = args[1].parse::<u16>().expect("Failed to parse duration");
     let input_json = &args[2]; // The second argument is the JSON input
 
     debug!("Getting root Node from input JSON");
     // Deserialize the input JSON into UtttState
     let state: UtttState = serde_json::from_str(&input_json).expect("Failed to deserialize UtttState");
     
-    let action = minimax(&state, depth);
+    let action = minimax(&state, Duration::new(duration.into(),0));
 
     let json = serde_json::to_string(&action).unwrap();
     info!("Serialized best move:\n");

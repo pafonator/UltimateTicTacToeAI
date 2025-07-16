@@ -3,6 +3,8 @@ use minimax::{Evaluator, Game, Winner};
 use crate::template::tic_tac_toe::{Grid3x3, GridSlot, PieceType};
 
 use super::{ node_uttt::UtttState, playable::Playable};
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 
 
 #[derive(Debug, PartialEq)]
@@ -161,8 +163,22 @@ impl Game for UtttState{
             BoardScore::InProgress(_) => return None,
         }
     }
+
+    fn zobrist_hash(state: &Self::S) -> u64 {
+        // TODO: Implement a proper Zobrist hash for your game state
+        // For now, you can use a placeholder (but this will be slow and not recommended for production)
+        let mut hasher = DefaultHasher::new();
+        // Hash the ultra_grid (the main board)
+        state.ultra_grid.hash(&mut hasher);
+        // Hash whose turn it is
+        state.crosses_turn.hash(&mut hasher);
+        // Hash the current play slot
+        state.current_play_slot.hash(&mut hasher);
+        hasher.finish()
+    }
 }
 
+#[derive(Clone)]
 pub struct UtttEvaluator;
 impl Evaluator for UtttEvaluator{
     type G = UtttState;

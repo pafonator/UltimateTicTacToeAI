@@ -1,0 +1,7 @@
+/home/pafonator/Projects/UltimateTicTacToeAI/target/debug/deps/libcolorchoice-6a3c84ed9b04695d.rmeta: /home/pafonator/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colorchoice-1.0.3/src/lib.rs
+
+/home/pafonator/Projects/UltimateTicTacToeAI/target/debug/deps/libcolorchoice-6a3c84ed9b04695d.rlib: /home/pafonator/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colorchoice-1.0.3/src/lib.rs
+
+/home/pafonator/Projects/UltimateTicTacToeAI/target/debug/deps/colorchoice-6a3c84ed9b04695d.d: /home/pafonator/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colorchoice-1.0.3/src/lib.rs
+
+/home/pafonator/.cargo/registry/src/index.crates.io-6f17d22bba15001f/colorchoice-1.0.3/src/lib.rs:
