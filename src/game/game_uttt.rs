@@ -176,6 +176,10 @@ impl Game for UtttState{
         state.current_play_slot.hash(&mut hasher);
         hasher.finish()
     }
+
+    fn notation(_state: &Self::S, _move: Self::M) -> Option<String> {
+        Some(format!("({},{})", _move.0 , _move.1))
+    }
 }
 
 #[derive(Clone)]

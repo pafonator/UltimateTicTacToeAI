@@ -6,6 +6,8 @@ pub struct Symmetry{
     pub invert_axes: bool
 }
 
+//TODO dominance,
+
 impl LeastSymmetry for UltraGrid {
 
     fn least_symmetry(s :&mut self) {
@@ -14,6 +16,7 @@ impl LeastSymmetry for UltraGrid {
             - Increasing / Decreasing Y (start from top or bottom)
             - X then Y / Y then X
         */
+        //TODO check all symmetries and only keep the smallest one
         return;
     }
 }

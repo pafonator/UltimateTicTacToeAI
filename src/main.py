@@ -140,7 +140,7 @@ class UltraGridApp:
     def simulate_ai_move(self):
         """Simulate an AI move by communicating with an external program."""
         try:
-            timeout = 8
+            timeout = 2
             print("Running AI for {} seconds".format(timeout))
             
             # Export current grid to JSON
@@ -261,7 +261,7 @@ class UltraGridApp:
 
 
 def main():
-    app = UltraGridApp(player1_type="AI", player2_type="AI")  
+    app = UltraGridApp(player1_type="AI", player2_type="Human")  
     app.run()
 
 

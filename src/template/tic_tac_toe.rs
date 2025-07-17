@@ -1,4 +1,5 @@
-use std::cmp::Ordering;
+use core::fmt;
+use std::{cmp::Ordering, path::Display};
 
 use serde::{Deserialize, Serialize};
 
@@ -43,6 +44,11 @@ impl Into<(u8, u8)> for GridSlot {
 impl Into<u8> for GridSlot {
     fn into(self) -> u8 {
         return self.0
+    }
+}
+impl fmt::Display for GridSlot {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

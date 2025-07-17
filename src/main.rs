@@ -11,14 +11,14 @@ use template::tic_tac_toe::GridSlot;
 
 extern crate minimax;
 
-fn minimax(state: &UtttState, timeout: std::time::Duration) -> Option<(GridSlot, GridSlot)>{
+fn run(state: &UtttState, timeout: std::time::Duration) -> Option<(GridSlot, GridSlot)>{
     let evaluator = UtttEvaluator;
 
     let parallel_opt = minimax::ParallelOptions::new();
     parallel_opt.with_num_threads(16);
     //parallel_opt.with_background_pondering();
-    let iter_opt = minimax::IterativeOptions::new();
-    iter_opt.verbose();
+    let mut iter_opt = minimax::IterativeOptions::new();
+    iter_opt.verbose = true;
 
     let mut strategy = minimax::ParallelSearch::new(evaluator,iter_opt,parallel_opt);
     strategy.set_timeout(timeout);
@@ -52,9 +52,10 @@ fn main() {
     // Deserialize the input JSON into UtttState
     let state: UtttState = serde_json::from_str(&input_json).expect("Failed to deserialize UtttState");
     
-    let action = minimax(&state, Duration::new(duration.into(),0));
+    let action = run(&state, Duration::new(duration.into(),0));
 
     let json = serde_json::to_string(&action).unwrap();
     info!("Serialized best move:\n");
     println!("[RESULT] {}", json);
 }
+
