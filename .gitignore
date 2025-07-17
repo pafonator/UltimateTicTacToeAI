@@ -3,7 +3,6 @@
 **/*.rs.bk
 **/*.swp
 **/*.swo
-Cargo.lock
 
 # IDE/editor files
 .vscode/
@@ -13,5 +12,3 @@ Cargo.lock
 # OS files
 .DS_Store
 Thumbs.db
-
-#
