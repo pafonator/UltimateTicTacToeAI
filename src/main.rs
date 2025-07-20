@@ -1,5 +1,6 @@
 mod game;
 mod template;
+use std::os::linux::raw::stat;
 use std::time::Duration;
 use std::{env, process};
 
@@ -39,20 +40,25 @@ fn main() {
     // Get the command-line arguments
     let args: Vec<String> = env::args().collect();
 
-    // Check if a JSON string is provided as an argument
-    if args.len() != 3 {
+    let state: UtttState;
+    let duration :u64;
+    if args.len() == 1 {
+        // Look for optional --state argument
+        duration = 10;
+        state = UtttState::default();
+    } else if args.len() != 3 {
         eprintln!("Usage: {} <Duration> <UtttState_JSON>", args[0]);
         process::exit(1);
+    } else {
+        duration = args[1].parse::<u64>().expect("Failed to parse duration");
+        let input_json = &args[2]; // The second argument is the JSON input
+
+        debug!("Getting root Node from input JSON");
+        // Deserialize the input JSON into UtttState
+        state = serde_json::from_str(&input_json).expect("Failed to deserialize UtttState");
     }
-
-    let duration = args[1].parse::<u16>().expect("Failed to parse duration");
-    let input_json = &args[2]; // The second argument is the JSON input
-
-    debug!("Getting root Node from input JSON");
-    // Deserialize the input JSON into UtttState
-    let state: UtttState = serde_json::from_str(&input_json).expect("Failed to deserialize UtttState");
     
-    let action = run(&state, Duration::new(duration.into(),0));
+    let action = run(&state, Duration::new(duration,0));
 
     let json = serde_json::to_string(&action).unwrap();
     info!("Serialized best move:\n");
