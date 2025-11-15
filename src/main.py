@@ -158,6 +158,7 @@ class UltraGridApp:
                 check=True,
             )
             
+            print(result.stderr)
             print(result.stdout)
             
             # Separate logs and result
