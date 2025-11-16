@@ -12,7 +12,7 @@ use template::tic_tac_toe::GridSlot;
 
 extern crate minimax;
 
-fn run(state: &UtttState, timeout: std::time::Duration) -> Option<(GridSlot, GridSlot)>{
+fn run(state: &UtttState, timeout: std::time::Duration) -> Option<(GridSlot, GridSlot, bool)> {
     let evaluator = UtttEvaluator;
 
     let parallel_opt = minimax::ParallelOptions::new();
@@ -58,10 +58,9 @@ fn main() {
         state = serde_json::from_str(&input_json).expect("Failed to deserialize UtttState");
     }
     
-    let action = run(&state, Duration::new(duration,0));
+    let action = run(&state, Duration::new(duration,0)).unwrap();
 
-    let json = serde_json::to_string(&action).unwrap();
     info!("Serialized best move:\n");
-    println!("[RESULT] {}", json);
+    println!("[RESULT] [{},{}]", action.0.0, action.1.0);
 }
 

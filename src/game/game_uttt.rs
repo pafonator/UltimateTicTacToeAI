@@ -96,7 +96,7 @@ impl<T> GridScore for Grid3x3<T> where T: GridScore{
 
 impl Game for UtttState{
     type S = UtttState;
-    type M = (GridSlot,GridSlot);
+    type M = (GridSlot,GridSlot,bool);
 
     fn generate_moves(state: &Self::S, moves: &mut Vec<Self::M>) {
         let primary_slot = state.current_play_slot;
@@ -107,39 +107,41 @@ impl Game for UtttState{
                 }
                 for s2 in GridSlot::ALL_SLOTS {
                     if state.ultra_grid.get(s1).get(s2) == &PieceType::Empty {
-                        moves.push((s1, s2));
+                        moves.push((s1, s2, true));
                     }
                 }
             }
         }else{
             for s in GridSlot::ALL_SLOTS {
                 if state.ultra_grid.get(primary_slot).get(s) == &PieceType::Empty {
-                    moves.push((primary_slot, s));
+                    moves.push((primary_slot, s, false));
                 }
             }
         }
     }
 
     fn apply(state: &mut Self::S, m: Self::M) -> Option<Self::S> {
-        let mut new_state_grid = state.ultra_grid.clone();
-        let (i,j) = m;
+        let (i,j,_all_slots) = m;
         let last_piece_placed = if state.crosses_turn { PieceType::X } else { PieceType::O };
-        *new_state_grid.get_mut(i).get_mut(j) = last_piece_placed;
+        *state.ultra_grid.get_mut(i).get_mut(j) = last_piece_placed;
 
-        let current_play_slot;
-        if !new_state_grid.get(j ).is_playable() {
-            current_play_slot = GridSlot::ANY_SLOT;
+        if !state.ultra_grid.get(j).is_playable() {
+            state.current_play_slot = GridSlot::ANY_SLOT;
         }else {
-            current_play_slot = j;
+            state.current_play_slot = j;
+        }
+        return None
+    }
+
+    fn undo(state: &mut Self::S, m: Self::M) {
+        let (i,j,all_slots) = m;
+        *state.ultra_grid.get_mut(i).get_mut(j) = PieceType::Empty;
+        if all_slots {
+            state.current_play_slot = GridSlot::ANY_SLOT;
+        }else {
+            state.current_play_slot = i;
         }
         
-        let new_state = UtttState { 
-            ultra_grid: new_state_grid, 
-            crosses_turn: !state.crosses_turn, 
-            current_play_slot
-        };
-
-        return Some(new_state)
     }
 
     fn get_winner(state: &Self::S) -> Option<Winner> {
