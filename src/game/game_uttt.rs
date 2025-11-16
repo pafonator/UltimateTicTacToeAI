@@ -5,6 +5,7 @@ use crate::template::tic_tac_toe::{Grid3x3, GridSlot, PieceType};
 use super::{ node_uttt::UtttState, playable::Playable};
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
+use std::os::linux::raw::stat;
 
 
 #[derive(Debug, PartialEq)]
@@ -130,6 +131,7 @@ impl Game for UtttState{
         }else {
             state.current_play_slot = j;
         }
+        state.crosses_turn = !state.crosses_turn;
         return None
     }
 
@@ -141,6 +143,7 @@ impl Game for UtttState{
         }else {
             state.current_play_slot = i;
         }
+        state.crosses_turn = !state.crosses_turn;
         
     }
 
