@@ -16,6 +16,9 @@ minimax ="0.5.3"
 # Leptos web framework dependencies
 leptos = { version = "0.6", features = ["csr"] }
 console_error_panic_hook = "0.1"
+wasm-bindgen-futures = "0.4"
+gloo-timers = { version = "0.2", features = ["futures"] }
+wasm-logger = "0.2"
 
 [profile.dev]
 debug = true

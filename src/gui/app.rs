@@ -1,7 +1,15 @@
-use leptos::*;
+use std::time::Duration;
+
+use leptos::{logging::warn, *};
+use log::info;
+use wasm_bindgen_futures::spawn_local;
+use gloo_timers::future::sleep;
+use web_sys;
+
+use crate::{gui::controller::grid_to_utttstate, run};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Player {
+pub enum Player {
     X,
     O,
 }
@@ -23,15 +31,15 @@ impl Player {
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum CellState {
+pub enum CellState {
     Empty,
     Occupied(Player),
 }
 
 #[derive(Clone, PartialEq, Debug)]
-struct SmallBoard {
-    cells: [CellState; 9],
-    winner: Option<Player>,
+pub struct SmallBoard {
+    pub cells: [CellState; 9],
+    pub winner: Option<Player>,
 }
 
 impl SmallBoard {
@@ -81,6 +89,11 @@ pub fn App() -> impl IntoView {
     let (current_player, set_current_player) = create_signal(Player::X);
     let (active_board, set_active_board) = create_signal(None::<usize>);
     let (game_winner, set_game_winner) = create_signal(None::<Player>);
+
+    // AI timing controls
+    let (ai_seconds, set_ai_seconds) = create_signal(5usize);
+    let (ai_progress, set_ai_progress) = create_signal(0.0f64);
+    let (ai_running, set_ai_running) = create_signal(false);
 
     let check_game_winner = move || {
         let boards_state = boards.get();
@@ -143,8 +156,42 @@ pub fn App() -> impl IntoView {
     };
 
     let ai_play = move |_| {
-        // TODO: Implement AI play
-        println!("AI play");
+        if ai_running.get() || game_winner.get().is_some() {
+            return;
+        }
+        set_ai_running.set(true);
+        set_ai_progress.set(0.0);
+        let seconds = ai_seconds.get();
+        let set_ai_progress_c = set_ai_progress.clone();
+        let set_ai_running_c = set_ai_running.clone();
+        
+        // Capture current game state
+        let boards_state = boards.get();
+        let player = current_player.get();
+        let active = active_board.get();
+        info!("AI started");
+        
+        spawn_local(async move {
+            // Start progress animation
+            /*for i in 0..((seconds+1)*5) {
+                sleep(std::time::Duration::from_millis(200)).await;
+                set_ai_progress_c.set((i as f64)*0.2 / (seconds as f64));
+            }*/
+            
+            // Run AI computation
+            let state = grid_to_utttstate(&boards_state, player, active);
+            let best_move = run(&state, std::time::Duration::from_secs(seconds as u64));
+            
+            // Apply the AI's move
+            if let Some((board_idx, cell_idx)) = best_move {
+                info!("Applying AI move: {:?}", (board_idx, cell_idx));
+            }else {
+                warn!("AI failed to find a move");
+            }
+            
+            set_ai_running_c.set(false);
+            set_ai_progress_c.set(0.0);
+        });
     };
 
     view! {
@@ -157,6 +204,20 @@ pub fn App() -> impl IntoView {
                         view! { <h2 class="winner">"🎉 Player " {winner.to_string()} " wins! 🎉"</h2> }.into_view()
                     } else {
                         view! { <h2>"Current Player: " {current_player.get().to_string()}</h2> }.into_view()
+                    }
+                }}
+            </div>
+
+            <div class="ai-progress-container">
+                {move || {
+                    if ai_running.get() {
+                        view! {
+                            <div class="progress-wrapper">
+                                <div class="progress-bar" style={move || format!("width: {}%;", ai_progress.get() * 100.0)}></div>
+                            </div>
+                        }.into_view()
+                    } else {
+                        view! { <div class="progress-wrapper empty"></div> }.into_view()
                     }
                 }}
             </div>
@@ -212,7 +273,27 @@ pub fn App() -> impl IntoView {
             
             <button class="reset-button" on:click=reset_game>"New Game"</button>
 
-            <button class="ai-play-button" on:click=ai_play>"AI Play"</button>
+            <div class="ai-controls">
+                <div class="ai-input">
+                    <span class="text">"AI Timeout"</span>
+                    <input
+                        type="number"
+                        min="1"
+                        max="60"
+                        value={move || ai_seconds.get().to_string()}
+                        on:input=move |ev| {
+                            let value = event_target_value(&ev);
+                            if let Ok(v) = value.parse::<usize>() {
+                                set_ai_seconds.set(v);
+                            }
+                        }
+                    />
+                    <span class="seconds-label">s</span>
+                </div>
+                <button class="ai-play-button" on:click=ai_play disabled={move || ai_running.get()}>
+                    {move || if ai_running.get() { "Running..." } else { "AI Play" }}
+                </button>
+            </div>
 
             <div class="rules">
                 <h3>"How to Play"</h3>

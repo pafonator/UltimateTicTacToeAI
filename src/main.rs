@@ -69,5 +69,9 @@ fn run(state: &UtttState, timeout: std::time::Duration) -> Option<(GridSlot, Gri
 
 fn main() {
     console_error_panic_hook::set_once();
+
+    // Initialize wasm-logger so logs appear in browser console
+    wasm_logger::init(wasm_logger::Config::default());
+
     mount_to_body(|| view! { <App/> })
 }
