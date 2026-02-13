@@ -12,3 +12,8 @@
 # OS files
 .DS_Store
 Thumbs.db
+
+# Other
+/public/
+/dist/
+/test/

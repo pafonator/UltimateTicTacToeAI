@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Tic Tac Toe</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+
+        .game-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .game-info h2 {
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .winner {
+            color: #00fd6a !important;
+        }
+
+        .mega-board {
+            display: grid;
+            grid-template-columns: repeat(3, 180px);
+            grid-template-rows: repeat(3, 180px);
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #333;
+            padding: 10px;
+            border-radius: 10px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .small-board {
+            background: rgb(204, 204, 204);
+            border-radius: 8px;
+            padding: 8px;
+            position: relative;
+            width: 180px;
+            height: 180px;
+            box-sizing: border-box;
+        }
+
+        .small-board.active {
+            background: white;
+            outline: 3px solid #3498db;
+            outline-offset: -3px;
+        }
+
+        .small-board.playable {
+            background: white;
+            outline: 3px solid #3498db;
+            outline-offset: -3px;
+        }
+
+        .small-board.won {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .board-winner {
+            font-size: 5em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cells {
+            display: grid;
+            grid-template-columns: repeat(3, 52px);
+            grid-template-rows: repeat(3, 52px);
+            gap: 4px;
+            width: 164px;
+            height: 164px;
+        }
+
+        .cell {
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1.8em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            color: #333;
+            width: 52px;
+            height: 52px;
+            box-sizing: border-box;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cell:hover {
+            background: #e0e0e0;
+        }
+
+        .cell:active {
+            background: #d0d0d0;
+        }
+
+        .reset-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .reset-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .reset-button:active {
+            transform: translateY(0);
+        }
+
+        .ai-play-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .ai-play-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .ai-play-button:active {
+            transform: translateY(0);
+        }
+
+        .rules {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .rules h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .rules p {
+            color: #555;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .cell {
+                font-size: 1.2em;
+            }
+
+            .board-winner {
+                font-size: 3em;
+            }
+        }
+    </style>
+</head>
+<body>
+</body>
+</html>
