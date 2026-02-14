@@ -5,19 +5,19 @@ edition = "2021"
 
 [dependencies]
 lazy_static = "1.5.0"
-env_logger = "0.11.6"
+env_logger = "0.11.9"
 log = "0.4"
-ahash = "0.8.3"
+ahash = "0.8.11"
 bitvec = "1.0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-minimax ="0.5.3"
+minimax ="0.5.4"
 
 # Leptos web framework dependencies
 leptos = { version = "0.6", features = ["csr"] }
 console_error_panic_hook = "0.1"
 wasm-bindgen-futures = "0.4"
-gloo-timers = { version = "0.2", features = ["futures"] }
+gloo-timers = { version = "0.3.0", features = ["futures"] }
 wasm-logger = "0.2"
 
 [profile.dev]
