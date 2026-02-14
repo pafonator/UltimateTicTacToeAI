@@ -38,7 +38,7 @@ pub fn grid_to_utttstate(
     state
 }
 
-async fn run(state: &UtttState, timeout: std::time::Duration) -> Option<(GridSlot, GridSlot)>{
+pub fn run(state: &UtttState, timeout: std::time::Duration) -> Option<(GridSlot, GridSlot)>{
     let evaluator = UtttEvaluator;
 
     //let parallel_opt = minimax::ParallelOptions::new();

@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::time::Duration;
 
 use log::{info, warn};
@@ -5,8 +6,10 @@ use leptos::{*};
 use wasm_bindgen_futures::spawn_local;
 use gloo_timers::future::sleep;
 use web_sys;
+use gloo_worker::{WorkerBridge, Spawnable};
 
-use crate::{gui::controller::grid_to_utttstate, run};
+use crate::gui::ai_worker::{AIWorker, AIRequest, AIResponse};
+use crate::gui::{controller::*};
 
 #[derive(Clone, Copy, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Player {
@@ -192,6 +195,10 @@ pub fn App() -> impl IntoView {
     };
 
     let handle_cell_click = move |board_idx: usize, cell_idx: usize| {
+        if ai_running.get() {
+            warn!("Ignoring click while AI is running");
+            return;
+        }
         make_move(board_idx, cell_idx, false);
     };
 
@@ -202,6 +209,23 @@ pub fn App() -> impl IntoView {
         set_game_winner.set(None);
     };
 
+    // Create AI worker bridge
+    let ai_worker = AIWorker::spawner()
+        .callback(move |response: AIResponse| {
+            if let Some((board_idx, cell_idx)) = response.best_move {
+                // Apply the AI's move using the common make_move function
+                info!("Applying AI move: {:?}", (board_idx, cell_idx));
+                if !make_move(board_idx, cell_idx, true) {
+                    warn!("AI move was invalid");
+                }
+            } else {
+                warn!("AI failed to find a move");
+            }
+            set_ai_running.set(false);
+            set_ai_progress.set(0.0);
+        })
+        .spawn("/ai_worker.js");
+
     let ai_play = move |_| {
         if ai_running.get() || game_winner.get().is_some() {
             return;
@@ -209,45 +233,28 @@ pub fn App() -> impl IntoView {
         set_ai_running.set(true);
         set_ai_progress.set(0.0);
         let seconds = ai_seconds.get();
-        let set_ai_progress_c = set_ai_progress.clone();
-        let set_ai_running_c = set_ai_running.clone();
         
         // Capture current game state
         let boards_state = boards.get();
         let player = current_player.get();
         let active = active_board.get();
+
+        ai_worker.send(AIRequest {
+            state: grid_to_utttstate(&boards_state, player, active),
+            seconds: seconds as u64,
+        });
         
         spawn_local(async move {
+            let start_time = std::time::Instant::now();
+            let mut elapsed = start_time.elapsed().as_millis() as f32 / 1000.0;
+            let mut percent;
             // Start progress animation
-            let animation_task = {
-                let set_ai_progress_inner = set_ai_progress_c.clone();
-                spawn_local(async move {
-                    for i in 0..((seconds+1)*5) {
-                        sleep(std::time::Duration::from_millis(200)).await;
-                        set_ai_progress_inner.set((i as f64)*0.2 / (seconds as f64));
-                    }
-                });
-            };
-            
-            info!("Calculating best move...");
-            
-            // TODO make this async
-            let state = grid_to_utttstate(&boards_state, player, active);
-            let best_move = run(&state, std::time::Duration::from_secs(seconds as u64));
-            
-            // Apply the AI's move using the common make_move function
-            if let Some((board_idx, cell_idx)) = best_move {
-                info!("Applying AI move: {:?}", (board_idx, cell_idx));
-                if !make_move(board_idx.0 as usize, cell_idx.0 as usize, true) {
-                    warn!("AI move was invalid");
-                }
-            } else {
-                warn!("AI failed to find a move");
+            while (elapsed < seconds as f32 || ai_running.get()) {
+                percent = elapsed / seconds as f32; if percent > 1.0 { percent = 1.0; }
+                set_ai_progress.set(percent as f64);
+                sleep(std::time::Duration::from_millis(200)).await;
+                elapsed = start_time.elapsed().as_millis() as f32 / 1000.0;
             }
-
-            
-            set_ai_running_c.set(false);
-            set_ai_progress_c.set(0.0);
         });
     };
 
