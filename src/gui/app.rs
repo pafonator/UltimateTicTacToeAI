@@ -1,14 +1,14 @@
 use std::time::Duration;
 
-use leptos::{logging::warn, *};
-use log::info;
+use log::{info, warn};
+use leptos::{*};
 use wasm_bindgen_futures::spawn_local;
 use gloo_timers::future::sleep;
 use web_sys;
 
 use crate::{gui::controller::grid_to_utttstate, run};
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Player {
     X,
     O,
@@ -30,13 +30,13 @@ impl Player {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum CellState {
     Empty,
     Occupied(Player),
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct SmallBoard {
     pub cells: [CellState; 9],
     pub winner: Option<Player>,
@@ -95,8 +95,12 @@ pub fn App() -> impl IntoView {
     let (ai_progress, set_ai_progress) = create_signal(0.0f64);
     let (ai_running, set_ai_running) = create_signal(false);
 
-    let check_game_winner = move || {
-        let boards_state = boards.get();
+    let check_game_winner = move |use_untracked: bool| {
+        let boards_state = if use_untracked {
+            boards.get_untracked()
+        } else {
+            boards.get()
+        };
         let lines = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
             [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
@@ -115,29 +119,62 @@ pub fn App() -> impl IntoView {
         }
     };
 
-    let handle_cell_click = move |board_idx: usize, cell_idx: usize| {
-        if game_winner.get().is_some() {
+    // Common function to make a move (works in both reactive and non-reactive contexts)
+    let make_move = move |board_idx: usize, cell_idx: usize, use_untracked: bool| -> bool {
+        // Check if game is over
+        let is_game_over = if use_untracked {
+            game_winner.get_untracked().is_some()
+        } else {
+            game_winner.get().is_some()
+        };
+        
+        if is_game_over {
             warn!("Ignoring click on board {}, game is over", board_idx);
-            return;
+            return false;
         }
 
         // Check if this board can be played
-        if let Some(active) = active_board.get() {
+        let current_active = if use_untracked {
+            active_board.get_untracked()
+        } else {
+            active_board.get()
+        };
+        
+        if let Some(active) = current_active {
             if active != board_idx {
                 warn!("Ignoring click on board {}, active board is {}", board_idx, active);
-                return;
+                return false;
             }
         }
 
-        let mut boards_state = boards.get();
-        let player = current_player.get();
+        let mut boards_state = if use_untracked {
+            boards.get_untracked()
+        } else {
+            boards.get()
+        };
+        
+        let player = if use_untracked {
+            current_player.get_untracked()
+        } else {
+            current_player.get()
+        };
 
         if boards_state[board_idx].make_move(cell_idx, player) {
             set_boards.set(boards_state.clone());
             
-            check_game_winner();
+            if (use_untracked) {
+                check_game_winner(true);
+            } else {
+                check_game_winner(false);
+            }
             
-            if game_winner.get().is_none() {
+            let is_game_over_after = if use_untracked {
+                game_winner.get_untracked().is_some()
+            } else {
+                game_winner.get().is_some()
+            };
+            
+            if !is_game_over_after {
                 set_current_player.set(player.other());
                 
                 // Set next active board
@@ -147,9 +184,15 @@ pub fn App() -> impl IntoView {
                     set_active_board.set(None);
                 }
             }
-        }else {
+            true
+        } else {
             warn!("Ignoring click on board {}, cell {}", board_idx, cell_idx);
+            false
         }
+    };
+
+    let handle_cell_click = move |board_idx: usize, cell_idx: usize| {
+        make_move(board_idx, cell_idx, false);
     };
 
     let reset_game = move |_| {
@@ -173,30 +216,35 @@ pub fn App() -> impl IntoView {
         let boards_state = boards.get();
         let player = current_player.get();
         let active = active_board.get();
-        info!("Calculating best move...");
         
         spawn_local(async move {
             // Start progress animation
-            /*for i in 0..((seconds+1)*5) {
-                sleep(std::time::Duration::from_millis(200)).await;
-                set_ai_progress_c.set((i as f64)*0.2 / (seconds as f64));
-            }*/
+            let animation_task = {
+                let set_ai_progress_inner = set_ai_progress_c.clone();
+                spawn_local(async move {
+                    for i in 0..((seconds+1)*5) {
+                        sleep(std::time::Duration::from_millis(200)).await;
+                        set_ai_progress_inner.set((i as f64)*0.2 / (seconds as f64));
+                    }
+                });
+            };
             
-            // Run AI computation
-            let state = grid_to_utttstate(&boards_state, player, active);
+            info!("Calculating best move...");
             
             // TODO make this async
+            let state = grid_to_utttstate(&boards_state, player, active);
             let best_move = run(&state, std::time::Duration::from_secs(seconds as u64));
             
-            // Apply the AI's move
+            // Apply the AI's move using the common make_move function
             if let Some((board_idx, cell_idx)) = best_move {
                 info!("Applying AI move: {:?}", (board_idx, cell_idx));
-
-                // TODO fix this call
-                handle_cell_click(board_idx.0 as usize, cell_idx.0 as usize);
-            }else {
+                if !make_move(board_idx.0 as usize, cell_idx.0 as usize, true) {
+                    warn!("AI move was invalid");
+                }
+            } else {
                 warn!("AI failed to find a move");
             }
+
             
             set_ai_running_c.set(false);
             set_ai_progress_c.set(0.0);
