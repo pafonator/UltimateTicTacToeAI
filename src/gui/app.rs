@@ -117,12 +117,14 @@ pub fn App() -> impl IntoView {
 
     let handle_cell_click = move |board_idx: usize, cell_idx: usize| {
         if game_winner.get().is_some() {
+            warn!("Ignoring click on board {}, game is over", board_idx);
             return;
         }
 
         // Check if this board can be played
         if let Some(active) = active_board.get() {
             if active != board_idx {
+                warn!("Ignoring click on board {}, active board is {}", board_idx, active);
                 return;
             }
         }
@@ -145,6 +147,8 @@ pub fn App() -> impl IntoView {
                     set_active_board.set(None);
                 }
             }
+        }else {
+            warn!("Ignoring click on board {}, cell {}", board_idx, cell_idx);
         }
     };
 
@@ -169,7 +173,7 @@ pub fn App() -> impl IntoView {
         let boards_state = boards.get();
         let player = current_player.get();
         let active = active_board.get();
-        info!("AI started");
+        info!("Calculating best move...");
         
         spawn_local(async move {
             // Start progress animation
@@ -180,11 +184,16 @@ pub fn App() -> impl IntoView {
             
             // Run AI computation
             let state = grid_to_utttstate(&boards_state, player, active);
+            
+            // TODO make this async
             let best_move = run(&state, std::time::Duration::from_secs(seconds as u64));
             
             // Apply the AI's move
             if let Some((board_idx, cell_idx)) = best_move {
                 info!("Applying AI move: {:?}", (board_idx, cell_idx));
+
+                // TODO fix this call
+                handle_cell_click(board_idx.0 as usize, cell_idx.0 as usize);
             }else {
                 warn!("AI failed to find a move");
             }
