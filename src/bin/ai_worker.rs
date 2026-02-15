@@ -14,7 +14,7 @@ fn main() {
     info!("Worker binary starting...");
     
     // This registers the worker and starts listening for messages
-    AIWorker::registrar();
+    AIWorker::registrar().register();
     
     log::info!("Worker registered and ready");
 }

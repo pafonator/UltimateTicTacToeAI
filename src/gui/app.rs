@@ -250,14 +250,14 @@ pub fn App() -> impl IntoView {
             let window = window().expect("no global `window` exists");
             let performance = window.performance().expect("performance should be available");
             let start_time = performance.now();
-            let mut elapsed = start_time / 1000.0;
+            let mut elapsed = (performance.now() - start_time) / 1000.0;
             let mut percent;
             // Start progress animation
             while (ai_running.get_untracked()) {
-                percent = elapsed / seconds as f64; if percent > 1.0 { percent = 1.0; }
+                percent = elapsed / (seconds as f64); if percent > 1.0 { percent = 1.0; }
                 set_ai_progress.set(percent);
                 sleep(Duration::from_millis(200)).await;
-                elapsed = performance.now() / 1000.0;
+                elapsed = (performance.now() - start_time) / 1000.0;
             }
         });
     };
@@ -367,8 +367,8 @@ pub fn App() -> impl IntoView {
                 <h3>"How to Play"</h3>
                 <p>"Win three small boards in a row to win the game!"</p>
                 <p>"Your move determines which board your opponent plays next."</p>
-                <p>"🟢 Green border = you must play here"</p>
                 <p>"🔵 Blue border = you can play here"</p>
+                <p>"Click on \"AI Play\" to calculate the best move using AI."</p>
             </div>
         </div>
     }

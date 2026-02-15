@@ -25,7 +25,8 @@ impl Worker for AIWorker {
     type Output = AIResponse;
 
     fn create(_scope: &WorkerScope<Self>) -> Self {
-        Self
+        info!("AI Worker created");
+        AIWorker
     }
 
     fn update(&mut self, _scope: &WorkerScope<Self>, _msg: Self::Message) {}
