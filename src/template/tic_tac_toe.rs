@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{cmp::Ordering, path::Display};
+use std::cmp::Ordering;
 
 use serde::{Deserialize, Serialize};
 

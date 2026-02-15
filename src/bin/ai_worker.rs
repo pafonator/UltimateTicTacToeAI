@@ -1,5 +1,4 @@
-use UltimateTicTacToe::AIWorker;
-use leptos::leptos_dom::logging::console_log;
+use uttt_browser_app::AIWorker;
 use gloo_worker::Registrable;
 use log::info;
 

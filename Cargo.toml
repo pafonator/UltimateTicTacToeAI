@@ -1,5 +1,5 @@
 [package]
-name = "UltimateTicTacToe"
+name = "uttt_browser_app"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,4 +1,3 @@
-use std::cmp::min;
 use std::time::Duration;
 
 use log::{info, warn};
@@ -6,7 +5,7 @@ use leptos::{*};
 use wasm_bindgen_futures::spawn_local;
 use gloo_timers::future::sleep;
 use web_sys;
-use gloo_worker::{WorkerBridge, Spawnable};
+use gloo_worker::Spawnable;
 use web_sys::window;
 
 use crate::gui::ai_worker::{AIWorker, AIRequest, AIResponse};
@@ -166,7 +165,7 @@ pub fn App() -> impl IntoView {
         if boards_state[board_idx].make_move(cell_idx, player) {
             set_boards.set(boards_state.clone());
             
-            if (use_untracked) {
+            if use_untracked  {
                 check_game_winner(true);
             } else {
                 check_game_winner(false);
@@ -253,7 +252,7 @@ pub fn App() -> impl IntoView {
             let mut elapsed = (performance.now() - start_time) / 1000.0;
             let mut percent;
             // Start progress animation
-            while (ai_running.get_untracked()) {
+            while ai_running.get_untracked()  {
                 percent = elapsed / (seconds as f64); if percent > 1.0 { percent = 1.0; }
                 set_ai_progress.set(percent);
                 sleep(Duration::from_millis(200)).await;

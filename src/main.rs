@@ -1,15 +1,8 @@
 mod game;
 mod template;
 mod gui;
-use std::time::Duration;
-use std::{env, process};
 
 use gui::app::App;
-use game::game_uttt::UtttEvaluator;
-use game::node_uttt::UtttState;
-use log::{debug, info};
-use minimax::Strategy;
-use template::tic_tac_toe::GridSlot;
 use leptos::*;
 
 extern crate minimax;
