@@ -34,6 +34,25 @@ impl Player {
 }
 
 #[derive(Clone, Copy, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
+pub enum AIMode {
+    OnCommand,
+    PlayAsX,
+    PlayAsO,
+    PlayAsBoth,
+}
+
+impl AIMode {
+    fn should_play(self, player: Player) -> bool {
+        match self {
+            AIMode::OnCommand => false,
+            AIMode::PlayAsX => player == Player::X,
+            AIMode::PlayAsO => player == Player::O,
+            AIMode::PlayAsBoth => true,
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum CellState {
     Empty,
     Occupied(Player),
@@ -97,6 +116,7 @@ pub fn App() -> impl IntoView {
     let (ai_seconds, set_ai_seconds) = create_signal(5usize);
     let (ai_progress, set_ai_progress) = create_signal(0.0f64);
     let (ai_running, set_ai_running) = create_signal(false);
+    let (ai_mode, set_ai_mode) = create_signal(AIMode::PlayAsO);
 
     let check_game_winner = move |use_untracked: bool| {
         let boards_state = if use_untracked {
@@ -226,18 +246,32 @@ pub fn App() -> impl IntoView {
         })
         .spawn("./ai_worker.js");
 
-    let ai_play = move |_| {
-        if ai_running.get() || game_winner.get().is_some() {
+    // Signal to trigger AI computation
+    let (ai_trigger, set_ai_trigger) = create_signal(0u32);
+
+    // Effect to start AI computation when triggered
+    create_effect(move |_| {
+        // Watch the trigger signal
+        let trigger_value = ai_trigger.get();
+        
+        // Skip the initial run (trigger starts at 0)
+        if trigger_value == 0 {
             return;
         }
+        
+        // Check if we should actually run
+        if ai_running.get_untracked() || game_winner.get_untracked().is_some() {
+            return;
+        }
+        
         set_ai_running.set(true);
         set_ai_progress.set(0.0);
-        let seconds = ai_seconds.get();
+        let seconds = ai_seconds.get_untracked();
         
         // Capture current game state
-        let boards_state = boards.get();
-        let player = current_player.get();
-        let active = active_board.get();
+        let boards_state = boards.get_untracked();
+        let player = current_player.get_untracked();
+        let active = active_board.get_untracked();
 
         ai_worker.send(AIRequest {
             state: grid_to_utttstate(&boards_state, player, active),
@@ -259,6 +293,30 @@ pub fn App() -> impl IntoView {
                 elapsed = (performance.now() - start_time) / 1000.0;
             }
         });
+    });
+
+    // Effect to automatically trigger AI based on mode
+    create_effect(move |_| {
+        let mode = ai_mode.get();
+        let player = current_player.get();
+        let is_game_over = game_winner.get().is_some();
+        let is_ai_running = ai_running.get();
+        
+        if !is_game_over && !is_ai_running && mode.should_play(player) {
+            // Small delay to let the UI update before AI plays
+            spawn_local(async move {
+                sleep(Duration::from_millis(300)).await;
+                
+                // Re-check conditions after delay and trigger AI
+                if !ai_running.get_untracked() && !game_winner.get_untracked().is_some() {
+                    set_ai_trigger.update(|v| *v = v.wrapping_add(1));
+                }
+            });
+        }
+    });
+
+    let ai_play = move |_| {
+        set_ai_trigger.update(|v| *v = v.wrapping_add(1));
     };
 
     view! {
@@ -357,7 +415,39 @@ pub fn App() -> impl IntoView {
                     />
                     <span class="seconds-label">s</span>
                 </div>
-                <button class="ai-play-button" on:click=ai_play disabled={move || ai_running.get()}>
+                
+                <select 
+                    class="ai-mode-select"
+                    on:change=move |ev| {
+                        let value = event_target_value(&ev);
+                        let mode = match value.as_str() {
+                            "play_x" => AIMode::PlayAsX,
+                            "play_o" => AIMode::PlayAsO,
+                            "play_both" => AIMode::PlayAsBoth,
+                            _ => AIMode::OnCommand,
+                        };
+                        set_ai_mode.set(mode);
+                    }
+                >
+                    <option value="on_command" selected={move || ai_mode.get() == AIMode::OnCommand}>
+                        "AI Run On Command"
+                    </option>
+                    <option value="play_x" selected={move || ai_mode.get() == AIMode::PlayAsX}>
+                        "AI Play as X"
+                    </option>
+                    <option value="play_o" selected={move || ai_mode.get() == AIMode::PlayAsO}>
+                        "AI Play as O"
+                    </option>
+                    <option value="play_both" selected={move || ai_mode.get() == AIMode::PlayAsBoth}>
+                        "AI Play as X & O"
+                    </option>
+                </select>
+                
+                <button 
+                    class="ai-play-button" 
+                    on:click=ai_play 
+                    disabled={move || ai_running.get() || ai_mode.get() != AIMode::OnCommand}
+                >
                     {move || if ai_running.get() { "Running..." } else { "AI Play" }}
                 </button>
             </div>
@@ -367,7 +457,7 @@ pub fn App() -> impl IntoView {
                 <p>"Win three small boards in a row to win the game!"</p>
                 <p>"Your move determines which board your opponent plays next."</p>
                 <p>"🔵 Blue border = you can play here"</p>
-                <p>"Click on \"AI Play\" to calculate the best move using AI."</p>
+                <p>"Select AI mode from dropdown to enable automatic play."</p>
             </div>
         </div>
     }
