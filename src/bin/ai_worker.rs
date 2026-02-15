@@ -7,6 +7,9 @@ fn main() {
     // Set up panic hook for better error messages
     console_error_panic_hook::set_once();
     
+    // Initialize wasm-logger for the worker so logs appear in browser console
+    wasm_logger::init(wasm_logger::Config::default());
+    
     // Initialize logging
     info!("Worker binary starting...");
     

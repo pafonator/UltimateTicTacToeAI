@@ -21,6 +21,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-logger",
+ "web-sys",
 ]
 
 [[package]]

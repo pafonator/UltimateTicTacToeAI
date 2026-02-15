@@ -7,6 +7,7 @@ use wasm_bindgen_futures::spawn_local;
 use gloo_timers::future::sleep;
 use web_sys;
 use gloo_worker::{WorkerBridge, Spawnable};
+use web_sys::window;
 
 use crate::gui::ai_worker::{AIWorker, AIRequest, AIResponse};
 use crate::gui::{controller::*};
@@ -224,7 +225,7 @@ pub fn App() -> impl IntoView {
             set_ai_running.set(false);
             set_ai_progress.set(0.0);
         })
-        .spawn("/ai_worker.js");
+        .spawn("./ai_worker.js");
 
     let ai_play = move |_| {
         if ai_running.get() || game_winner.get().is_some() {
@@ -245,15 +246,18 @@ pub fn App() -> impl IntoView {
         });
         
         spawn_local(async move {
-            let start_time = std::time::Instant::now();
-            let mut elapsed = start_time.elapsed().as_millis() as f32 / 1000.0;
+            // Use web_sys's performance API instead of std::time::Instant (not available in WASM)
+            let window = window().expect("no global `window` exists");
+            let performance = window.performance().expect("performance should be available");
+            let start_time = performance.now();
+            let mut elapsed = start_time / 1000.0;
             let mut percent;
             // Start progress animation
-            while (elapsed < seconds as f32 || ai_running.get()) {
-                percent = elapsed / seconds as f32; if percent > 1.0 { percent = 1.0; }
-                set_ai_progress.set(percent as f64);
-                sleep(std::time::Duration::from_millis(200)).await;
-                elapsed = start_time.elapsed().as_millis() as f32 / 1000.0;
+            while (ai_running.get_untracked()) {
+                percent = elapsed / seconds as f64; if percent > 1.0 { percent = 1.0; }
+                set_ai_progress.set(percent);
+                sleep(Duration::from_millis(200)).await;
+                elapsed = performance.now() / 1000.0;
             }
         });
     };
