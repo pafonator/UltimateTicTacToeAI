@@ -73,7 +73,6 @@
         }
 
         .progress-wrapper.empty {
-            height: 6px;
             background: transparent;
         }
 
@@ -85,27 +84,27 @@
 
         .mega-board {
             display: grid;
-            grid-template-columns: repeat(3, 180px);
-            grid-template-rows: repeat(3, 180px);
-            gap: 10px;
-            margin-bottom: 18px;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2%;
+            max-width: 95vw;   /* fits screen width */
+            aspect-ratio: 1;   /* keeps it square */
+            margin: 0 auto 18px auto;
             background: #333;
-            padding: 10px;
+            padding: 2%;
             border-radius: 10px;
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
         }
 
         .small-board {
             background: rgb(204, 204, 204);
             border-radius: 8px;
-            padding: 8px;
+            padding: 4%;
             position: relative;
-            width: 180px;
-            height: 180px;
+            width: 100%;
+            height: 100%;
             box-sizing: border-box;
         }
+
 
         .small-board.active {
             background: white;
@@ -140,30 +139,29 @@
 
         .cells {
             display: grid;
-            grid-template-columns: repeat(3, 52px);
-            grid-template-rows: repeat(3, 52px);
-            gap: 4px;
-            width: 164px;
-            height: 164px;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2%;
+            width: 100%;
+            height: 100%;
         }
 
         .cell {
             background: #f0f0f0;
             border: 2px solid #ddd;
             border-radius: 6px;
-            font-size: 1.8em;
+            font-size: 2vw; /* scales text on screen width */
             font-weight: bold;
             cursor: pointer;
-            transition: background 0.2s ease;
-            color: #333;
-            width: 52px;
-            height: 52px;
-            box-sizing: border-box;
-            padding: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            transition: background 0.2s ease;
         }
+
 
         .cell:hover {
             background: #e0e0e0;
@@ -277,7 +275,7 @@
             }
 
             .cell {
-                font-size: 1.2em;
+                font-size: 3vm;
             }
 
             .board-winner {
