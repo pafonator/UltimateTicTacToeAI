@@ -484,6 +484,30 @@ pub fn App() -> impl IntoView {
                 }}
             </div>
 
+            <div class="timeline-controls">
+                <button
+                    class="timeline-button"
+                    on:click=go_back
+                    disabled=move || !timeline.with(|t| t.can_go_back())
+                >
+                    "◀"
+                </button>
+                <span class="timeline-info">
+                    {move || {
+                        let idx = timeline_idx.get();
+                        let total = timeline.with(|t| t.states.len()) - 1;
+                        format!("Move {} / {}", idx, total)
+                    }}
+                </span>
+                <button
+                    class="timeline-button"
+                    on:click=go_forward
+                    disabled=move || !timeline.with(|t| t.can_go_forward())
+                >
+                    "▶"
+                </button>
+            </div>
+
             <div class="mega-board">
                 {(0..9).map(|board_idx| {
                     view! {
@@ -534,30 +558,6 @@ pub fn App() -> impl IntoView {
             </div>
             
             <button class="reset-button" on:click=reset_game>"New Game"</button>
-
-            <div class="timeline-controls">
-                <button
-                    class="timeline-button"
-                    on:click=go_back
-                    disabled=move || !timeline.with(|t| t.can_go_back())
-                >
-                    "◀"
-                </button>
-                <span class="timeline-info">
-                    {move || {
-                        let idx = timeline_idx.get();
-                        let total = timeline.with(|t| t.states.len()) - 1;
-                        format!("Move {} / {}", idx, total)
-                    }}
-                </span>
-                <button
-                    class="timeline-button"
-                    on:click=go_forward
-                    disabled=move || !timeline.with(|t| t.can_go_forward())
-                >
-                    "▶"
-                </button>
-            </div>
 
             <div class="ai-controls">
                 <div class="ai-input">
