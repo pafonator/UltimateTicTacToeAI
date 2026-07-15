@@ -117,6 +117,7 @@ pub fn App() -> impl IntoView {
     let (ai_progress, set_ai_progress) = create_signal(0.0f64);
     let (ai_running, set_ai_running) = create_signal(false);
     let (ai_mode, set_ai_mode) = create_signal(AIMode::PlayAsO);
+    let (ai_stop, set_ai_stop) = create_signal(0u32);
 
     let check_game_winner = move |use_untracked: bool| {
         let boards_state = if use_untracked {
@@ -227,11 +228,16 @@ pub fn App() -> impl IntoView {
         set_current_player.set(Player::X);
         set_active_board.set(None);
         set_game_winner.set(None);
+        set_ai_stop.update(|v| *v = v.wrapping_add(1));
     };
 
     // Create AI worker bridge
     let ai_worker = AIWorker::spawner()
         .callback(move |response: AIResponse| {
+            if !ai_running.get_untracked() {
+                info!("AI was stopped, discarding result");
+                return;
+            }
             if let Some((board_idx, cell_idx)) = response.best_move {
                 // Apply the AI's move using the common make_move function
                 info!("Applying AI move: {:?}", (board_idx, cell_idx));
@@ -293,6 +299,13 @@ pub fn App() -> impl IntoView {
                 elapsed = (performance.now() - start_time) / 1000.0;
             }
         });
+    });
+
+    // Effect to stop AI when ai_stop signal fires
+    create_effect(move |_| {
+        let _stop_value = ai_stop.get();
+        set_ai_running.set(false);
+        set_ai_progress.set(0.0);
     });
 
     // Effect to automatically trigger AI based on mode
@@ -427,6 +440,7 @@ pub fn App() -> impl IntoView {
                             _ => AIMode::OnCommand,
                         };
                         set_ai_mode.set(mode);
+                        set_ai_stop.update(|v| *v = v.wrapping_add(1));
                     }
                 >
                     <option value="on_command" selected={move || ai_mode.get() == AIMode::OnCommand}>
