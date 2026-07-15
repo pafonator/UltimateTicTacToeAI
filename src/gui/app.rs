@@ -105,6 +105,64 @@ impl SmallBoard {
     }
 }
 
+#[derive(Clone, PartialEq, Debug)]
+struct GameState {
+    boards: Vec<SmallBoard>,
+    current_player: Player,
+    active_board: Option<usize>,
+    game_winner: Option<Player>,
+}
+
+#[derive(Clone, Debug)]
+struct Timeline {
+    states: Vec<GameState>,
+    idx: usize,
+}
+
+impl Timeline {
+    fn new(initial: GameState) -> Self {
+        Self {
+            states: vec![initial],
+            idx: 0,
+        }
+    }
+
+    fn current(&self) -> &GameState {
+        &self.states[self.idx]
+    }
+
+    fn can_go_back(&self) -> bool {
+        self.idx > 0
+    }
+
+    fn can_go_forward(&self) -> bool {
+        self.idx < self.states.len() - 1
+    }
+
+    fn go_back(&mut self) {
+        if self.can_go_back() {
+            self.idx -= 1;
+        }
+    }
+
+    fn go_forward(&mut self) {
+        if self.can_go_forward() {
+            self.idx += 1;
+        }
+    }
+
+    fn record(&mut self, state: GameState) {
+        self.states.truncate(self.idx + 1);
+        self.states.push(state);
+        self.idx = self.states.len() - 1;
+    }
+
+    fn reset(&mut self, initial: GameState) {
+        self.states = vec![initial];
+        self.idx = 0;
+    }
+}
+
 #[component]
 pub fn App() -> impl IntoView {
     let (boards, set_boards) = create_signal(vec![SmallBoard::new(); 9]);
@@ -118,6 +176,29 @@ pub fn App() -> impl IntoView {
     let (ai_running, set_ai_running) = create_signal(false);
     let (ai_mode, set_ai_mode) = create_signal(AIMode::PlayAsO);
     let (ai_stop, set_ai_stop) = create_signal(0u32);
+    let (is_navigating, set_is_navigating) = create_signal(false);
+
+    // Timeline for move history
+    let initial_state = GameState {
+        boards: vec![SmallBoard::new(); 9],
+        current_player: Player::X,
+        active_board: None,
+        game_winner: None,
+    };
+    let (timeline, set_timeline) = create_signal(Timeline::new(initial_state));
+    let (timeline_idx, set_timeline_idx) = create_signal(0usize);
+    let is_at_latest = move || timeline_idx.get() == timeline.with(|t| t.states.len()) - 1;
+
+    let record_state = move || {
+        let state = GameState {
+            boards: boards.get_untracked(),
+            current_player: current_player.get_untracked(),
+            active_board: active_board.get_untracked(),
+            game_winner: game_winner.get_untracked(),
+        };
+        set_timeline.update(|t| t.record(state));
+        set_timeline_idx.set(timeline.with(|t| t.idx));
+    };
 
     let check_game_winner = move |use_untracked: bool| {
         let boards_state = if use_untracked {
@@ -184,6 +265,7 @@ pub fn App() -> impl IntoView {
         };
 
         if boards_state[board_idx].make_move(cell_idx, player) {
+            set_is_navigating.set(false);
             set_boards.set(boards_state.clone());
             
             if use_untracked  {
@@ -208,6 +290,7 @@ pub fn App() -> impl IntoView {
                     set_active_board.set(None);
                 }
             }
+            record_state();
             true
         } else {
             warn!("Ignoring click on board {}, cell {}", board_idx, cell_idx);
@@ -224,11 +307,46 @@ pub fn App() -> impl IntoView {
     };
 
     let reset_game = move |_| {
-        set_boards.set(vec![SmallBoard::new(); 9]);
-        set_current_player.set(Player::X);
-        set_active_board.set(None);
-        set_game_winner.set(None);
+        let initial = GameState {
+            boards: vec![SmallBoard::new(); 9],
+            current_player: Player::X,
+            active_board: None,
+            game_winner: None,
+        };
+        set_is_navigating.set(true);
         set_ai_stop.update(|v| *v = v.wrapping_add(1));
+        set_boards.set(initial.boards.clone());
+        set_current_player.set(initial.current_player);
+        set_active_board.set(initial.active_board);
+        set_game_winner.set(initial.game_winner);
+        set_timeline.update(|t| t.reset(initial));
+        set_timeline_idx.set(0);
+    };
+
+    let go_back = move |_| {
+        set_is_navigating.set(true);
+        set_timeline.update(|t| t.go_back());
+        let idx = timeline.with(|t| t.idx);
+        set_ai_stop.update(|v| *v = v.wrapping_add(1));
+        set_timeline_idx.set(idx);
+        let state = timeline.with(|t| t.current().clone());
+        set_boards.set(state.boards);
+        set_current_player.set(state.current_player);
+        set_active_board.set(state.active_board);
+        set_game_winner.set(state.game_winner);
+    };
+
+    let go_forward = move |_| {
+        set_is_navigating.set(true);
+        set_timeline.update(|t| t.go_forward());
+        let idx = timeline.with(|t| t.idx);
+        set_ai_stop.update(|v| *v = v.wrapping_add(1));
+        set_timeline_idx.set(idx);
+        let state = timeline.with(|t| t.current().clone());
+        set_boards.set(state.boards);
+        set_current_player.set(state.current_player);
+        set_active_board.set(state.active_board);
+        set_game_winner.set(state.game_winner);
     };
 
     // Create AI worker bridge
@@ -314,14 +432,20 @@ pub fn App() -> impl IntoView {
         let player = current_player.get();
         let is_game_over = game_winner.get().is_some();
         let is_ai_running = ai_running.get();
+        let at_latest = is_at_latest();
+        let navigating = is_navigating.get();
         
-        if !is_game_over && !is_ai_running && mode.should_play(player) {
+        if !is_game_over && !is_ai_running && !navigating && at_latest && mode.should_play(player) {
             // Small delay to let the UI update before AI plays
             spawn_local(async move {
                 sleep(Duration::from_millis(300)).await;
                 
                 // Re-check conditions after delay and trigger AI
-                if !ai_running.get_untracked() && !game_winner.get_untracked().is_some() {
+                if !ai_running.get_untracked()
+                    && !game_winner.get_untracked().is_some()
+                    && !is_navigating.get_untracked()
+                    && is_at_latest()
+                {
                     set_ai_trigger.update(|v| *v = v.wrapping_add(1));
                 }
             });
@@ -410,6 +534,30 @@ pub fn App() -> impl IntoView {
             </div>
             
             <button class="reset-button" on:click=reset_game>"New Game"</button>
+
+            <div class="timeline-controls">
+                <button
+                    class="timeline-button"
+                    on:click=go_back
+                    disabled=move || !timeline.with(|t| t.can_go_back())
+                >
+                    "◀"
+                </button>
+                <span class="timeline-info">
+                    {move || {
+                        let idx = timeline_idx.get();
+                        let total = timeline.with(|t| t.states.len()) - 1;
+                        format!("Move {} / {}", idx, total)
+                    }}
+                </span>
+                <button
+                    class="timeline-button"
+                    on:click=go_forward
+                    disabled=move || !timeline.with(|t| t.can_go_forward())
+                >
+                    "▶"
+                </button>
+            </div>
 
             <div class="ai-controls">
                 <div class="ai-input">
