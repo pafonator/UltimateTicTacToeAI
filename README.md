@@ -40,7 +40,7 @@ This will:
 To create an optimized build:
 
 ```bash
-trunk build --release
+   trunk build --release
 ```
 
 The output will be in the `dist/` directory, which you can deploy to any static web host.
